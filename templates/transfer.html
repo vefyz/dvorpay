@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Заголовок -->
+    <div class="card">
+        <h1 class="card-title">
+            <i class="fas fa-exchange-alt" style="color: var(--primary-blue);"></i>
+            Перевод дублей
+        </h1>
+        <p style="color: var(--medium-gray);">Быстрый и безопасный перевод между счетами Федерации</p>
+    </div>
+
+    <div class="account-info">
+        <!-- Форма перевода -->
+        <div class="card" style="grid-column: span 2;">
+            <form method="POST" action="{{ url_for('transfer') }}">
+                <div class="form-group">
+                    <label class="form-label" for="to_account">
+                        <i class="fas fa-user"></i> Счет получателя
+                    </label>
+                    <div style="position: relative;">
+                        <input type="text" id="to_account" name="to_account" 
+                               class="form-control form-control-lg" 
+                               placeholder="Введите номер счета (DFXXXXXXXXXX)"
+                               required
+                               pattern="DF\d{10}"
+                               title="Формат: DF + 10 цифр">
+                        <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--medium-gray);">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    <small style="color: var(--medium-gray); display: block; margin-top: 0.25rem;">
+                        Формат: DF + 10 цифр (пример: DF1234567890)
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="amount">
+                        <i class="fas fa-coins"></i> Сумма перевода
+                    </label>
+                    <div style="position: relative;">
+                        <input type="number" id="amount" name="amount" 
+                               class="form-control form-control-lg" 
+                               placeholder="0.00"
+                               required
+                               min="0.01"
+                               max="{{ current_user.balance }}"
+                               step="0.01">
+                        <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--medium-gray);">
+                            дублей
+                        </div>
+                    </div>
+                    <small style="color: var(--medium-gray); display: block; margin-top: 0.25rem;">
+                        Доступно: <strong>{{ current_user.balance }} дублей</strong>
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="description">
+                        <i class="fas fa-comment"></i> Описание перевода (необязательно)
+                    </label>
+                    <textarea id="description" name="description" 
+                              class="form-control" 
+                              rows="3"
+                              placeholder="Укажите назначение платежа..."></textarea>
+                </div>
+
+                <div class="btn-group" style="margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-paper-plane"></i> Отправить перевод
+                    </button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Отмена
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Информация о переводе -->
+        <div class="card">
+            <h3 class="card-title">
+                <i class="fas fa-info-circle" style="color: var(--primary-blue);"></i>
+                Информация
+            </h3>
+            <ul style="list-style: none; padding: 0;">
+                <li style="margin-bottom: 1rem; padding-left: 1.5rem; position: relative;">
+                    <i class="fas fa-check-circle" style="color: var(--success); position: absolute; left: 0;"></i>
+                    <strong>Мгновенный перевод</strong><br>
+                    <small>Дубли зачисляются сразу</small>
+                </li>
+                <li style="margin-bottom: 1rem; padding-left: 1.5rem; position: relative;">
+                    <i class="fas fa-check-circle" style="color: var(--success); position: absolute; left: 0;"></i>
+                    <strong>Без комиссии</strong><br>
+                    <small>Все переводы бесплатны</small>
+                </li>
+                <li style="margin-bottom: 1rem; padding-left: 1.5rem; position: relative;">
+                    <i class="fas fa-check-circle" style="color: var(--success); position: absolute; left: 0;"></i>
+                    <strong>Безопасно</strong><br>
+                    <small>Все операции защищены</small>
+                </li>
+                <li style="padding-left: 1.5rem; position: relative;">
+                    <i class="fas fa-check-circle" style="color: var(--success); position: absolute; left: 0;"></i>
+                    <strong>Круглосуточно</strong><br>
+                    <small>Работаем 24/7</small>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- История переводов -->
+    {% if recent_transactions %}
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-history" style="color: var(--primary-blue);"></i>
+                Недавние переводы
+            </h2>
+        </div>
+        <div>
+            {% for trans in recent_transactions %}
+            <div class="transaction-item">
+                <div style="flex: 1;">
+                    <div style="font-weight: 500; color: var(--dark-blue);">
+                        {% if trans.from_account == current_user.account_number %}
+                        <i class="fas fa-arrow-up" style="color: var(--danger);"></i>
+                        Перевод на {{ trans.to_account[:4] }}...{{ trans.to_account[-4:] }}
+                        {% else %}
+                        <i class="fas fa-arrow-down" style="color: var(--success);"></i>
+                        Перевод от {{ trans.from_account[:4] }}...{{ trans.from_account[-4:] }}
+                        {% endif %}
+                    </div>
+                    <small style="color: var(--medium-gray);">
+                        {{ trans.timestamp.strftime('%d.%m.%Y %H:%M') }}
+                        {% if trans.description %}• {{ trans.description }}{% endif %}
+                    </small>
+                </div>
+                <div class="transaction-amount {% if trans.from_account == current_user.account_number %}negative{% else %}positive{% endif %}">
+                    {% if trans.from_account == current_user.account_number %}
+                    -{{ trans.amount }}
+                    {% else %}
+                    +{{ trans.amount }}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

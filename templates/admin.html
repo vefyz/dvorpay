@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Заголовок админ-панели -->
+    <div class="dashboard-hero">
+        <div style="position: relative; z-index: 1;">
+            <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">
+                <i class="fas fa-user-shield"></i> Административная панель
+            </h1>
+            <p style="opacity: 0.9;">Управление Дворовой Федерацией</p>
+        </div>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div class="card">
+        <h2 class="card-title">
+            <i class="fas fa-bolt" style="color: var(--primary-blue);"></i>
+            Быстрые действия
+        </h2>
+        <div class="btn-group">
+            <a href="{{ url_for('register') }}" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i> Зарегистрировать пользователя
+            </a>
+            <button class="btn btn-secondary" onclick="showAddFundsModal()">
+                <i class="fas fa-coins"></i> Пополнить баланс
+            </button>
+            <button class="btn btn-secondary" onclick="showSystemSettings()">
+                <i class="fas fa-cog"></i> Настройки системы
+            </button>
+        </div>
+    </div>
+
+    <!-- Статистика системы -->
+    <div class="account-info">
+        <div class="card" style="text-align: center;">
+            <div class="stat-number">{{ users|length }}</div>
+            <div class="stat-label">Всего пользователей</div>
+        </div>
+        <div class="card" style="text-align: center;">
+            <div class="stat-number">{{ admin_count }}</div>
+            <div class="stat-label">Администраторов</div>
+        </div>
+        <div class="card" style="text-align: center;">
+            <div class="stat-number">{{ "%.2f"|format(total_balance) }}</div>
+            <div class="stat-label">Всего дублей в системе</div>
+        </div>
+        <div class="card" style="text-align: center;">
+            <div class="stat-number">{{ transactions|length }}</div>
+            <div class="stat-label">Транзакций за все время</div>
+        </div>
+    </div>
+
+    <!-- Список пользователей -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-users" style="color: var(--primary-blue);"></i>
+                Пользователи системы
+            </h2>
+            <div style="position: relative;">
+                <input type="text" id="userSearch" placeholder="Поиск пользователя..." 
+                       class="form-control" style="width: 250px;">
+                <i class="fas fa-search" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--medium-gray);"></i>
+            </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: var(--very-light-blue);">
+                        <th style="padding: 1rem; text-align: left; color: var(--dark-blue);">ID</th>
+                        <th style="padding: 1rem; text-align: left; color: var(--dark-blue);">Логин</th>
+                        <th style="padding: 1rem; text-align: left; color: var(--dark-blue);">Паспорт</th>
+                        <th style="padding: 1rem; text-align: left; color: var(--dark-blue);">Счет</th>
+                        <th style="padding: 1rem; text-align: left; color: var(--dark-blue);">Баланс</th>
+                        <th style="padding: 1rem; text-align: left; color: var(--dark-blue);">Статус</th>
+                        <th style="padding: 1rem; text-align: left; color: var(--dark-blue);">Дата регистрации</th>
+                        <th style="padding: 1rem; text-align: left; color: var(--dark-blue);">Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTable">
+                    {% for user in users %}
+                    <tr data-userid="{{ user.id }}" data-username="{{ user.username }}">
+                        <td style="padding: 1rem; font-family: monospace;">{{ user.id }}</td>
+                        <td style="padding: 1rem;">
+                            <div style="font-weight: 500; color: var(--dark-blue);">{{ user.username }}</div>
+                        </td>
+                        <td style="padding: 1rem; font-family: monospace;">
+                            <span style="background: var(--very-light-blue); padding: 0.25rem 0.5rem; border-radius: 4px;">
+                                {{ user.passport_number }}
+                            </span>
+                        </td>
+                        <td style="padding: 1rem; font-family: monospace; font-size: 0.9rem;">
+                            {{ user.account_number }}
+                        </td>
+                        <td style="padding: 1rem;">
+                            <div style="font-weight: 600; color: var(--success);">{{ "%.2f"|format(user.balance) }}</div>
+                            <div style="font-size: 0.85rem; color: var(--medium-gray);">дублей</div>
+                        </td>
+                        <td style="padding: 1rem;">
+                            {% if user.is_admin %}
+                            <span style="background: rgba(0, 119, 255, 0.1); color: var(--primary-blue); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 500;">
+                                <i class="fas fa-user-shield"></i> Админ
+                            </span>
+                            {% else %}
+                            <span style="background: rgba(108, 117, 125, 0.1); color: var(--medium-gray); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 500;">
+                                <i class="fas fa-user"></i> Пользователь
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 1rem; color: var(--medium-gray); font-size: 0.9rem;">
+                            {{ user.created_at.strftime('%d.%m.%Y') }}
+                        </td>
+                        <td style="padding: 1rem;">
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                {% if not user.is_admin %}
+                                <button class="btn btn-sm" style="background: var(--primary-blue); color: white;"
+                                        onclick="makeAdmin({{ user.id }}, '{{ user.username }}')">
+                                    <i class="fas fa-user-shield"></i>
+                                </button>
+                                {% else %}
+                                <button class="btn btn-sm" style="background: var(--danger); color: white;"
+                                        onclick="removeAdmin({{ user.id }}, '{{ user.username }}')">
+                                    <i class="fas fa-user-times"></i>
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-sm btn-secondary"
+                                        onclick="showUserDetails({{ user.id }})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-secondary"
+                                        onclick="resetUserPassword({{ user.id }}, '{{ user.username }}')">
+                                    <i class="fas fa-key"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Последние транзакции -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-exchange-alt" style="color: var(--primary-blue);"></i>
+                Последние транзакции
+            </h2>
+            <span style="color: var(--medium-gray); font-size: 0.9rem;">
+                Показано {{ transactions|length }} из {{ total_turnover|int }} операций
+            </span>
+        </div>
+
+        {% if transactions %}
+        <div style="max-height: 400px; overflow-y: auto;">
+            {% for trans in transactions %}
+            <div class="transaction-item">
+                <div style="flex: 1;">
+                    <div style="font-weight: 500; color: var(--dark-blue); display: flex; align-items: center; gap: 0.5rem;">
+                        {% if trans.from_account == 'SYSTEM' %}
+                        <i class="fas fa-server" style="color: var(--primary-blue);"></i>
+                        <span>Система → {{ trans.to_account }}</span>
+                        {% else %}
+                        <i class="fas fa-exchange-alt" style="color: var(--medium-gray);"></i>
+                        <span>{{ trans.from_account }} → {{ trans.to_account }}</span>
+                        {% endif %}
+                    </div>
+                    <small style="color: var(--medium-gray);">
+                        {{ trans.timestamp.strftime('%d.%m.%Y %H:%M') }}
+                        {% if trans.description %}• {{ trans.description }}{% endif %}
+                    </small>
+                </div>
+                <div style="font-weight: 600; color: {% if trans.from_account == 'SYSTEM' %}var(--success){% else %}var(--dark-blue){% endif %};">
+                    {{ trans.amount }} дублей
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 2rem; color: var(--medium-gray);">
+            <i class="fas fa-exchange-alt" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+            <p>Транзакций пока нет</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Системная информация -->
+    <div class="card">
+        <h2 class="card-title">
+            <i class="fas fa-chart-pie" style="color: var(--primary-blue);"></i>
+            Системная информация
+        </h2>
+        <div class="account-info">
+            <div class="card">
+                <div style="text-align: center;">
+                    <div class="stat-number">{{ "%.2f"|format(avg_balance) }}</div>
+                    <div class="stat-label">Средний баланс</div>
+                </div>
+            </div>
+            <div class="card">
+                <div style="text-align: center;">
+                    <div class="stat-number">{{ system_transactions }}</div>
+                    <div class="stat-label">Системных транзакций</div>
+                </div>
+            </div>
+            <div class="card">
+                <div style="text-align: center;">
+                    <div class="stat-number">{{ "%.2f"|format(total_turnover) }}</div>
+                    <div class="stat-label">Общий оборот</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Опасная зона -->
+    <div class="card" style="border: 2px solid var(--danger); background: rgba(220, 53, 69, 0.05);">
+        <h2 class="card-title" style="color: var(--danger);">
+            <i class="fas fa-exclamation-triangle"></i>
+            Опасная зона
+        </h2>
+        <p style="color: var(--danger); margin-bottom: 1.5rem;">
+            Действия в этом разделе могут привести к необратимым изменениям в системе.
+        </p>
+        <div class="btn-group">
+            <button class="btn btn-danger" onclick="showResetDialog()">
+                <i class="fas fa-trash"></i> Сбросить базу данных
+            </button>
+            <button class="btn btn-danger" onclick="exportAllData()">
+                <i class="fas fa-database"></i> Экспорт всей базы
+            </button>
+            <button class="btn btn-danger" onclick="showLogs()">
+                <i class="fas fa-clipboard-list"></i> Просмотр логов
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для пополнения баланса -->
+<div id="addFundsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="card" style="width: 90%; max-width: 500px; margin: 2rem; max-height: 90vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="color: var(--dark-blue);">
+                <i class="fas fa-coins"></i> Пополнение баланса
+            </h2>
+            <button onclick="closeModal('addFundsModal')" style="background: none; border: none; font-size: 1.5rem; color: var(--medium-gray); cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form id="addFundsForm" onsubmit="addFunds(event)">
+            <div class="form-group">
+                <label class="form-label">Выберите пользователя</label>
+                <select id="userSelect" class="form-control" required>
+                    <option value="">-- Выберите пользователя --</option>
+                    {% for user in users %}
+                    <option value="{{ user.account_number }}">{{ user.username }} ({{ user.account_number }}) - {{ user.balance }} дублей</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Сумма пополнения</label>
+                <div style="position: relative;">
+                    <input type="number" id="amountInput" class="form-control" 
+                           placeholder="0.00" min="0.01" max="10000" step="0.01" required>
+                    <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--medium-gray);">
+                        дублей
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Причина пополнения</label>
+                <select id="reasonSelect" class="form-control">
+                    <option value="bonus">Бонус за активность</option>
+                    <option value="salary">Зарплата</option>
+                    <option value="refund">Возврат средств</option>
+                    <option value="other">Другое</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Комментарий (необязательно)</label>
+                <textarea id="commentInput" class="form-control" rows="3" placeholder="Дополнительная информация..."></textarea>
+            </div>
+            
+            <div class="btn-group" style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Пополнить баланс
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addFundsModal')">
+                    <i class="fas fa-times"></i> Отмена
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Поиск пользователей
+document.getElementById('userSearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#usersTable tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Функции для модальных окон
+function showModal(modalId) {
+    document.getElementById(modalId).style.display = 'flex';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function showAddFundsModal() {
+    showModal('addFundsModal');
+}
+
+function addFunds(e) {
+    e.preventDefault();
+    const account = document.getElementById('userSelect').value;
+    const amount = document.getElementById('amountInput').value;
+    const reason = document.getElementById('reasonSelect').value;
+    const comment = document.getElementById('commentInput').value;
+    
+    if (!account || !amount) {
+        alert('Заполните все обязательные поля');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('account_number', account);
+    formData.append('amount', amount);
+    
+    fetch('/admin/add_funds', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Баланс успешно пополнен! Новый баланс: ${data.new_balance} дублей`);
+            closeModal('addFundsModal');
+            location.reload();
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Ошибка сети: ' + error.message);
+    });
+}
+
+function makeAdmin(userId, username) {
+    if (!confirm(`Назначить пользователя "${username}" администратором?`)) return;
+    
+    const formData = new FormData();
+    formData.append('user_id', userId);
+    formData.append('is_admin', 'true');
+    
+    fetch('/admin/set_admin', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Пользователь "${username}" теперь администратор`);
+            location.reload();
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    });
+}
+
+function removeAdmin(userId, username) {
+    if (!confirm(`Снять права администратора с пользователя "${username}"?`)) return;
+    
+    const formData = new FormData();
+    formData.append('user_id', userId);
+    formData.append('is_admin', 'false');
+    
+    fetch('/admin/set_admin', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Пользователь "${username}" больше не администратор`);
+            location.reload();
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    });
+}
+
+function resetUserPassword(userId, username) {
+    const newPassword = prompt(`Введите новый пароль для пользователя "${username}":`);
+    if (!newPassword) return;
+    
+    if (newPassword.length < 6) {
+        alert('Пароль должен содержать минимум 6 символов');
+        return;
+    }
+    
+    if (!confirm(`Вы уверены, что хотите сменить пароль для пользователя "${username}"?`)) return;
+    
+    const formData = new FormData();
+    formData.append('user_id', userId);
+    formData.append('new_password', newPassword);
+    
+    fetch('/admin/reset_password', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Пароль для пользователя "${username}" успешно изменен`);
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    });
+}
+
+function showUserDetails(userId) {
+    alert(`Детальная информация о пользователе будет доступна в следующем обновлении`);
+}
+
+function showResetDialog() {
+    const password = prompt('Введите кодовое слово для подтверждения сброса базы данных:');
+    if (password === 'СБРОС ДВОРОВОЙ ФЕДЕРАЦИИ') {
+        if (confirm('ВНИМАНИЕ! Это действие удалит ВСЕ данные. Вы уверены?')) {
+            alert('Функция сброса базы данных заблокирована для безопасности');
+        }
+    } else if (password) {
+        alert('Неверное кодовое слово');
+    }
+}
+
+function exportAllData() {
+    alert('Экспорт всей базы данных будет доступен в следующем обновлении');
+}
+
+function showLogs() {
+    alert('Просмотр логов системы будет доступен в следующем обновлении');
+}
+
+// Закрытие модальных окон при клике вне их
+window.addEventListener('click', function(e) {
+    const modals = document.querySelectorAll('[id$="Modal"]');
+    modals.forEach(modal => {
+        if (e.target === modal) {
+            closeModal(modal.id);
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="account-info">
+        <!-- Левый блок с информацией -->
+        <div class="card" style="grid-column: span 1;">
+            <div style="text-align: center; padding: 2rem 0;">
+                <div class="icon-large" style="background: var(--very-light-blue); border-radius: 50%; padding: 1.5rem; margin: 0 auto 2rem; width: 80px; height: 80px;">
+                    <i class="fas fa-landmark" style="color: var(--primary-blue); font-size: 2rem;"></i>
+                </div>
+                <h2 style="color: var(--dark-blue); margin-bottom: 1rem;">Дворовая Федерация</h2>
+                <p style="color: var(--medium-gray); margin-bottom: 0.5rem;">Официальный банк дублей</p>
+                <p style="color: var(--medium-gray);">Безопасные переводы между жителями</p>
+            </div>
+            
+            <div style="margin-top: 2rem;">
+                <h3 style="color: var(--dark-blue); margin-bottom: 1rem; font-size: 1.1rem;">
+                    <i class="fas fa-shield-alt" style="color: var(--primary-blue);"></i>
+                    Ваша безопасность
+                </h3>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                        <i class="fas fa-lock" style="color: var(--success); position: absolute; left: 0;"></i>
+                        <small>Зашифрованное соединение</small>
+                    </li>
+                    <li style="margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative;">
+                        <i class="fas fa-user-shield" style="color: var(--success); position: absolute; left: 0;"></i>
+                        <small>Двухфакторная защита</small>
+                    </li>
+                    <li style="padding-left: 1.5rem; position: relative;">
+                        <i class="fas fa-history" style="color: var(--success); position: absolute; left: 0;"></i>
+                        <small>История всех операций</small>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Форма входа -->
+        <div class="card" style="grid-column: span 1;">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h1 style="color: var(--dark-blue); margin-bottom: 0.5rem;">Вход в систему</h1>
+                <p style="color: var(--medium-gray);">Введите данные для доступа к вашему счету</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="form-group">
+                    <label class="form-label" for="username">
+                        <i class="fas fa-user"></i> Логин
+                    </label>
+                    <div style="position: relative;">
+                        <input type="text" id="username" name="username" 
+                               class="form-control form-control-lg" 
+                               placeholder="Введите ваш логин"
+                               required
+                               autocomplete="username">
+                        <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--medium-gray);">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">
+                        <i class="fas fa-key"></i> Пароль
+                    </label>
+                    <div style="position: relative;">
+                        <input type="password" id="password" name="password" 
+                               class="form-control form-control-lg" 
+                               placeholder="Введите ваш пароль"
+                               required
+                               autocomplete="current-password">
+                        <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--medium-gray);">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                    </div>
+                    <div style="text-align: right; margin-top: 0.25rem;">
+                        <small style="color: var(--medium-gray);">
+                            <i class="fas fa-info-circle"></i>
+                            Обратитесь к администратору для сброса пароля
+                        </small>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fas fa-sign-in-alt"></i> Войти в систему
+                    </button>
+                </div>
+            </form>
+
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--light-gray); text-align: center;">
+                <p style="color: var(--medium-gray); margin-bottom: 0;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Регистрация новых пользователей доступна только администраторам
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Информационный блок -->
+    <div class="card" style="text-align: center; background: var(--very-light-blue); border: 2px solid var(--primary-blue);">
+        <h3 style="color: var(--dark-blue); margin-bottom: 1rem;">
+            <i class="fas fa-coins"></i> Валюта дубли
+        </h3>
+        <p style="color: var(--medium-gray); margin-bottom: 0;">
+            Используйте наши фирменные дубли для всех внутренних расчетов в Дворовой Федерации.
+            Каждый житель получает паспорт и номер счета при регистрации.
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,479 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Заголовок настроек -->
+    <div class="dashboard-hero">
+        <div style="position: relative; z-index: 1;">
+            <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">
+                <i class="fas fa-cog"></i> Настройки системы
+            </h1>
+            <p style="opacity: 0.9;">Управление параметрами Дворовой Федерации</p>
+        </div>
+    </div>
+
+    <!-- Статистика системы -->
+    <div class="account-info">
+        <div class="card" style="text-align: center;">
+            <div class="stat-number">{{ users_count }}</div>
+            <div class="stat-label">Пользователей</div>
+        </div>
+        <div class="card" style="text-align: center;">
+            <div class="stat-number">{{ active_today }}</div>
+            <div class="stat-label">Активных сегодня</div>
+        </div>
+        <div class="card" style="text-align: center;">
+            <div class="stat-number">{{ settings.system_version }}</div>
+            <div class="stat-label">Версия системы</div>
+        </div>
+        <div class="card" style="text-align: center;">
+            <div class="stat-number">
+                {% if settings.maintenance_mode %}
+                <i class="fas fa-pause" style="color: var(--danger);"></i>
+                {% else %}
+                <i class="fas fa-play" style="color: var(--success);"></i>
+                {% endif %}
+            </div>
+            <div class="stat-label">Статус</div>
+        </div>
+    </div>
+
+    <!-- Форма настроек -->
+    <form method="POST" action="{{ url_for('settings') }}">
+        <!-- Основные настройки -->
+        <div class="card">
+            <h2 class="card-title">
+                <i class="fas fa-sliders-h" style="color: var(--primary-blue);"></i>
+                Основные настройки
+            </h2>
+            
+            <div class="account-info">
+                <div class="form-group">
+                    <label class="form-label">Название системы</label>
+                    <input type="text" name="system_name" class="form-control" 
+                           value="{{ settings.system_name }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Название валюты</label>
+                    <input type="text" name="currency_name" class="form-control" 
+                           value="{{ settings.currency_name }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Начальный баланс</label>
+                    <div style="position: relative;">
+                        <input type="number" name="initial_balance" class="form-control" 
+                               value="{{ settings.initial_balance }}" min="0" step="0.01" required>
+                        <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--medium-gray);">
+                            {{ settings.currency_name }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Максимум пользователей</label>
+                    <input type="number" name="max_users" class="form-control" 
+                           value="{{ settings.max_users }}" min="1" max="1000" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Настройки переводов -->
+        <div class="card">
+            <h2 class="card-title">
+                <i class="fas fa-exchange-alt" style="color: var(--primary-blue);"></i>
+                Настройки переводов
+            </h2>
+            
+            <div class="account-info">
+                <div class="form-group">
+                    <label class="form-label">Минимальная сумма перевода</label>
+                    <div style="position: relative;">
+                        <input type="number" name="min_transfer_amount" class="form-control" 
+                               value="{{ settings.min_transfer_amount }}" min="0.01" step="0.01" required>
+                        <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--medium-gray);">
+                            {{ settings.currency_name }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Максимальная сумма перевода</label>
+                    <div style="position: relative;">
+                        <input type="number" name="max_transfer_amount" class="form-control" 
+                               value="{{ settings.max_transfer_amount }}" min="0.01" step="0.01" required>
+                        <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--medium-gray);">
+                            {{ settings.currency_name }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Комиссия за перевод (%)</label>
+                    <div style="position: relative;">
+                        <input type="number" name="transfer_fee_percent" class="form-control" 
+                               value="{{ settings.transfer_fee_percent }}" min="0" max="100" step="0.1" required>
+                        <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--medium-gray);">
+                            %
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem;">
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                    <input type="checkbox" id="allow_self_transfers" name="allow_self_transfers" 
+                           {% if settings.allow_self_transfers %}checked{% endif %}>
+                    <label for="allow_self_transfers" style="margin: 0; font-weight: 500;">Разрешить переводы самому себе</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Системные настройки -->
+        <div class="card">
+            <h2 class="card-title">
+                <i class="fas fa-server" style="color: var(--primary-blue);"></i>
+                Системные настройки
+            </h2>
+            
+            <div class="account-info">
+                <div class="form-group">
+                    <label class="form-label">Хранение истории (дней)</label>
+                    <input type="number" name="transaction_history_days" class="form-control" 
+                           value="{{ settings.transaction_history_days }}" min="30" max="3650" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Интервал резервного копирования (дней)</label>
+                    <input type="number" name="backup_interval_days" class="form-control" 
+                           value="{{ settings.backup_interval_days }}" min="1" max="30" required>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem;">
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                    <input type="checkbox" id="maintenance_mode" name="maintenance_mode" 
+                           {% if settings.maintenance_mode %}checked{% endif %}>
+                    <label for="maintenance_mode" style="margin: 0; font-weight: 500;">Режим технического обслуживания</label>
+                </div>
+                
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                    <input type="checkbox" id="require_passport_for_registration" name="require_passport_for_registration" 
+                           {% if settings.require_passport_for_registration %}checked{% endif %}>
+                    <label for="require_passport_for_registration" style="margin: 0; font-weight: 500;">Требовать паспорт при регистрации</label>
+                </div>
+                
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <input type="checkbox" id="show_balance_to_all" name="show_balance_to_all" 
+                           {% if settings.show_balance_to_all %}checked{% endif %}>
+                    <label for="show_balance_to_all" style="margin: 0; font-weight: 500;">Показывать баланс всем пользователям</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Настройки уведомлений -->
+        <div class="card">
+            <h2 class="card-title">
+                <i class="fas fa-bell" style="color: var(--primary-blue);"></i>
+                Настройки уведомлений
+            </h2>
+            
+            <div style="margin-top: 1rem;">
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                    <input type="checkbox" id="system_notifications" name="system_notifications" 
+                           {% if settings.system_notifications %}checked{% endif %}>
+                    <label for="system_notifications" style="margin: 0; font-weight: 500;">Системные уведомления</label>
+                </div>
+                
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                    <input type="checkbox" id="email_notifications" name="email_notifications" 
+                           {% if settings.email_notifications %}checked{% endif %}>
+                    <label for="email_notifications" style="margin: 0; font-weight: 500;">Email уведомления</label>
+                </div>
+                
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <input type="checkbox" id="sms_notifications" name="sms_notifications" 
+                           {% if settings.sms_notifications %}checked{% endif %}>
+                    <label for="sms_notifications" style="margin: 0; font-weight: 500;">SMS уведомления</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Контактная информация -->
+        <div class="card">
+            <h2 class="card-title">
+                <i class="fas fa-address-card" style="color: var(--primary-blue);"></i>
+                Контактная информация
+            </h2>
+            
+            <div class="account-info">
+                <div class="form-group">
+                    <label class="form-label">Email администратора</label>
+                    <input type="email" name="admin_email" class="form-control" 
+                           value="{{ settings.admin_email }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Телефон поддержки</label>
+                    <input type="text" name="support_phone" class="form-control" 
+                           value="{{ settings.support_phone }}">
+                </div>
+            </div>
+        </div>
+
+        <!-- Текстовые настройки -->
+        <div class="card">
+            <h2 class="card-title">
+                <i class="fas fa-file-alt" style="color: var(--primary-blue);"></i>
+                Текстовые настройки
+            </h2>
+            
+            <div class="form-group">
+                <label class="form-label">Приветственное сообщение</label>
+                <textarea name="welcome_message" class="form-control" rows="3" 
+                          placeholder="Сообщение, которое видят новые пользователи...">{{ settings.welcome_message }}</textarea>
+            </div>
+            
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label class="form-label">Правила Федерации</label>
+                <textarea name="terms_of_service" class="form-control" rows="5" 
+                          placeholder="Правила использования системы...">{{ settings.terms_of_service }}</textarea>
+            </div>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="card">
+            <div class="btn-group" style="justify-content: space-between;">
+                <div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Сохранить все настройки
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="createBackup()">
+                        <i class="fas fa-download"></i> Создать резервную копию
+                    </button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-danger" onclick="showResetDialog()">
+                        <i class="fas fa-redo"></i> Сбросить настройки
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <!-- Информация о системе -->
+    <div class="card" style="background: var(--very-light-blue);">
+        <h2 class="card-title">
+            <i class="fas fa-info-circle" style="color: var(--primary-blue);"></i>
+            Информация о системе
+        </h2>
+        
+        <div class="account-info">
+            <div class="info-item">
+                <h4 style="color: var(--dark-blue); margin-bottom: 0.5rem;">
+                    <i class="fas fa-database"></i> База данных
+                </h4>
+                <p style="color: var(--medium-gray); font-size: 0.9rem;">
+                    SQLite • federation.db<br>
+                    Автономная база данных
+                </p>
+            </div>
+            
+            <div class="info-item">
+                <h4 style="color: var(--dark-blue); margin-bottom: 0.5rem;">
+                    <i class="fas fa-code"></i> Технологии
+                </h4>
+                <p style="color: var(--medium-gray); font-size: 0.9rem;">
+                    Python • Flask • SQLAlchemy<br>
+                    HTML • CSS • JavaScript
+                </p>
+            </div>
+            
+            <div class="info-item">
+                <h4 style="color: var(--dark-blue); margin-bottom: 0.5rem;">
+                    <i class="fas fa-shield-alt"></i> Безопасность
+                </h4>
+                <p style="color: var(--medium-gray); font-size: 0.9rem;">
+                    Хеширование паролей<br>
+                    Защита от CSRF
+                </p>
+            </div>
+            
+            <div class="info-item">
+                <h4 style="color: var(--dark-blue); margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar-alt"></i> Последнее обновление
+                </h4>
+                <p style="color: var(--medium-gray); font-size: 0.9rem;">
+                    {{ settings.system_version }}<br>
+                    Все функции активны
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Мониторинг системы -->
+    <div class="card">
+        <h2 class="card-title">
+            <i class="fas fa-chart-bar" style="color: var(--primary-blue);"></i>
+            Мониторинг системы
+        </h2>
+        
+        <div style="margin-top: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--primary-blue);">100%</div>
+                    <div style="color: var(--medium-gray); font-size: 0.9rem;">Доступность</div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--success);">0 ms</div>
+                    <div style="color: var(--medium-gray); font-size: 0.9rem;">Время отклика</div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--warning);">0</div>
+                    <div style="color: var(--medium-gray); font-size: 0.9rem;">Ошибок сегодня</div>
+                </div>
+                
+                <div style="text-align: center;">
+                    <div style="font-size: 1.5rem; font-weight: 600; color: var(--dark-blue);">24/7</div>
+                    <div style="color: var(--medium-gray); font-size: 0.9rem;">Работа</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно сброса настроек -->
+<div id="resetModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+    <div class="card" style="width: 90%; max-width: 500px; margin: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="color: var(--danger);">
+                <i class="fas fa-exclamation-triangle"></i> Сброс настроек
+            </h2>
+            <button onclick="closeModal('resetModal')" style="background: none; border: none; font-size: 1.5rem; color: var(--medium-gray); cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <p style="color: var(--danger); margin-bottom: 1rem;">
+            <i class="fas fa-exclamation-circle"></i> Внимание! Это действие сбросит все настройки системы к значениям по умолчанию.
+        </p>
+        
+        <div class="form-group">
+            <label class="form-label">Для подтверждения введите: <strong>СБРОС НАСТРОЕК</strong></label>
+            <input type="text" id="resetConfirm" class="form-control" placeholder="Введите текст для подтверждения">
+        </div>
+        
+        <div class="btn-group" style="margin-top: 1.5rem;">
+            <button type="button" class="btn btn-danger" onclick="resetSettings()">
+                <i class="fas fa-redo"></i> Сбросить настройки
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('resetModal')">
+                <i class="fas fa-times"></i> Отмена
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Создание резервной копии
+function createBackup() {
+    if (!confirm('Создать резервную копию настроек системы?')) return;
+    
+    fetch('/settings/backup', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Резервная копия создана: ${data.filename}`);
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Ошибка сети: ' + error.message);
+    });
+}
+
+// Показать диалог сброса настроек
+function showResetDialog() {
+    document.getElementById('resetConfirm').value = '';
+    document.getElementById('resetModal').style.display = 'flex';
+}
+
+// Сброс настроек
+function resetSettings() {
+    const confirmText = document.getElementById('resetConfirm').value;
+    
+    if (confirmText !== 'СБРОС НАСТРОЕК') {
+        alert('Неверный текст подтверждения');
+        return;
+    }
+    
+    if (!confirm('Вы уверены, что хотите сбросить все настройки к значениям по умолчанию?')) return;
+    
+    const formData = new FormData();
+    formData.append('confirm', confirmText);
+    
+    fetch('/settings/reset', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Настройки успешно сброшены');
+            closeModal('resetModal');
+            location.reload();
+        } else {
+            alert('Ошибка: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Ошибка сети: ' + error.message);
+    });
+}
+
+// Закрытие модальных окон
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Закрытие модальных окон при клике вне их
+window.addEventListener('click', function(e) {
+    const modals = document.querySelectorAll('[id$="Modal"]');
+    modals.forEach(modal => {
+        if (e.target === modal) {
+            closeModal(modal.id);
+        }
+    });
+});
+
+// Подтверждение перед выходом при изменении настроек
+let settingsChanged = false;
+const inputs = document.querySelectorAll('input, textarea, select');
+inputs.forEach(input => {
+    input.addEventListener('change', () => {
+        settingsChanged = true;
+    });
+});
+
+window.addEventListener('beforeunload', function(e) {
+    if (settingsChanged) {
+        e.preventDefault();
+        e.returnValue = 'У вас есть несохраненные изменения. Вы уверены, что хотите уйти?';
+    }
+});
+
+// Автосохранение каждые 30 секунд
+setInterval(() => {
+    if (settingsChanged) {
+        console.log('Автосохранение настроек...');
+        // Здесь можно добавить логику автосохранения
+    }
+}, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Герой-секция -->
+    <section class="dashboard-hero">
+        <div style="position: relative; z-index: 1;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">Дворовая Федерация</h1>
+            <p style="font-size: 1.25rem; opacity: 0.9;">Официальный банк дублей вашего двора</p>
+        </div>
+    </section>
+
+    <!-- Преимущества -->
+    <div class="card">
+        <h2 class="card-title">
+            <i class="fas fa-star" style="color: var(--primary-blue);"></i>
+            Почему выбирают нас?
+        </h2>
+        <div class="account-info">
+            <div class="info-item">
+                <div class="icon-large" style="background: var(--very-light-blue); border-radius: 50%; padding: 1rem;">
+                    <i class="fas fa-shield-alt" style="color: var(--primary-blue);"></i>
+                </div>
+                <h3 style="margin: 1rem 0 0.5rem;">Безопасность</h3>
+                <p>Ваши дубли под надежной защитой</p>
+            </div>
+            <div class="info-item">
+                <div class="icon-large" style="background: var(--very-light-blue); border-radius: 50%; padding: 1rem;">
+                    <i class="fas fa-bolt" style="color: var(--primary-blue);"></i>
+                </div>
+                <h3 style="margin: 1rem 0 0.5rem;">Скорость</h3>
+                <p>Мгновенные переводы между счетами</p>
+            </div>
+            <div class="info-item">
+                <div class="icon-large" style="background: var(--very-light-blue); border-radius: 50%; padding: 1rem;">
+                    <i class="fas fa-coins" style="color: var(--primary-blue);"></i>
+                </div>
+                <h3 style="margin: 1rem 0 0.5rem;">Дубли</h3>
+                <p>Собственная валюта Федерации</p>
+            </div>
+        </div>
+    </div>
+
+    {% if not current_user.is_authenticated %}
+    <!-- Призыв к действию -->
+    <div class="card" style="text-align: center; background: var(--gradient-blue); color: white;">
+        <h2 style="font-size: 2rem; margin-bottom: 1rem;">Присоединяйтесь к Федерации!</h2>
+        <p style="margin-bottom: 2rem; font-size: 1.1rem;">Откройте счет и получите 100 дублей на старт</p>
+        <div class="btn-group" style="justify-content: center;">
+            <a href="{{ url_for('register') }}" class="btn" style="background: white; color: var(--primary-blue);">
+                <i class="fas fa-user-plus"></i>Регистрация
+            </a>
+            <a href="{{ url_for('login') }}" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white;">
+                <i class="fas fa-sign-in-alt"></i>Вход
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <!-- Быстрые действия -->
+    <div class="card">
+        <h2 class="card-title">
+            <i class="fas fa-rocket" style="color: var(--primary-blue);"></i>
+            Быстрые действия
+        </h2>
+        <div class="btn-group">
+            <a href="{{ url_for('transfer') }}" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i>Сделать перевод
+            </a>
+            <a href="{{ url_for('transactions') }}" class="btn btn-secondary">
+                <i class="fas fa-chart-line"></i>История операций
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Статистика -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-chart-bar" style="color: var(--primary-blue);"></i>
+                Статистика Федерации
+            </h2>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ users_count if users_count else "0" }}</div>
+                <div class="stat-label">Жителей</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ transactions_count if transactions_count else "0" }}</div>
+                <div class="stat-label">Транзакций</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">DF</div>
+                <div class="stat-label">Валюта</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Работаем</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

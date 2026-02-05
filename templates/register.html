@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Заголовок -->
+    <div class="card">
+        <h1 class="card-title">
+            <i class="fas fa-user-plus" style="color: var(--primary-blue);"></i>
+            Регистрация нового жителя Федерации
+        </h1>
+        <p style="color: var(--medium-gray);">Только администраторы могут создавать новые аккаунты</p>
+    </div>
+
+    <!-- Форма регистрации -->
+    <div class="account-info">
+        <div class="card" style="grid-column: span 2;">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div class="icon-large" style="background: var(--very-light-blue); border-radius: 50%; padding: 1rem; margin: 0 auto 1rem; width: 60px; height: 60px;">
+                    <i class="fas fa-id-card" style="color: var(--primary-blue); font-size: 1.5rem;"></i>
+                </div>
+                <h2 style="color: var(--dark-blue);">Создание аккаунта</h2>
+                <p style="color: var(--medium-gray);">Система автоматически сгенерирует паспорт и номер счета</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('register') }}">
+                <div class="form-group">
+                    <label class="form-label" for="username">
+                        <i class="fas fa-user-tag"></i> Имя пользователя
+                    </label>
+                    <input type="text" id="username" name="username" 
+                           class="form-control form-control-lg" 
+                           placeholder="Придумайте логин для нового пользователя"
+                           required
+                           pattern="[A-Za-z0-9_]{3,20}"
+                           title="Логин должен содержать от 3 до 20 символов (буквы, цифры, подчеркивание)">
+                    <small style="color: var(--medium-gray); display: block; margin-top: 0.25rem;">
+                        От 3 до 20 символов (буквы, цифры, подчеркивание)
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">
+                        <i class="fas fa-key"></i> Пароль
+                    </label>
+                    <input type="password" id="password" name="password" 
+                           class="form-control form-control-lg" 
+                           placeholder="Придумайте пароль"
+                           required
+                           minlength="6">
+                    <small style="color: var(--medium-gray); display: block; margin-top: 0.25rem;">
+                        Минимум 6 символов
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="initial_balance">
+                        <i class="fas fa-coins"></i> Начальный баланс
+                    </label>
+                    <div style="position: relative;">
+                        <input type="number" id="initial_balance" name="initial_balance" 
+                               class="form-control form-control-lg" 
+                               value="100"
+                               min="0"
+                               max="10000"
+                               step="0.01">
+                        <div style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--medium-gray);">
+                            дублей
+                        </div>
+                    </div>
+                    <small style="color: var(--medium-gray); display: block; margin-top: 0.25rem;">
+                        Рекомендуется: 100 дублей
+                    </small>
+                </div>
+
+                <div class="form-group" style="margin-top: 2rem;">
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-user-plus"></i> Зарегистрировать пользователя
+                        </button>
+                        <a href="{{ url_for('admin') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Отмена
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Информация о регистрации -->
+        <div class="card">
+            <h3 class="card-title">
+                <i class="fas fa-info-circle" style="color: var(--primary-blue);"></i>
+                Информация о регистрации
+            </h3>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: var(--dark-blue); margin-bottom: 0.5rem; font-size: 1rem;">
+                    <i class="fas fa-passport" style="color: var(--primary-blue);"></i>
+                    Паспорт гражданина
+                </h4>
+                <p style="color: var(--medium-gray); font-size: 0.9rem; margin-bottom: 1rem;">
+                    Каждому новому жителю автоматически выдается паспорт в формате <code>DFP00000000</code>.
+                    Паспорт является уникальным идентификатором в Федерации.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: var(--dark-blue); margin-bottom: 0.5rem; font-size: 1rem;">
+                    <i class="fas fa-credit-card" style="color: var(--primary-blue);"></i>
+                    Номер счета
+                </h4>
+                <p style="color: var(--medium-gray); font-size: 0.9rem; margin-bottom: 1rem;">
+                    Для каждого аккаунта создается уникальный номер счета в формате <code>DF0000000000</code>.
+                    Используется для переводов между жителями.
+                </p>
+            </div>
+
+            <div>
+                <h4 style="color: var(--dark-blue); margin-bottom: 0.5rem; font-size: 1rem;">
+                    <i class="fas fa-handshake" style="color: var(--primary-blue);"></i>
+                    Правила Федерации
+                </h4>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
+                        <i class="fas fa-check" style="color: var(--success); position: absolute; left: 0; font-size: 0.8rem;"></i>
+                        <small>Один человек = один аккаунт</small>
+                    </li>
+                    <li style="margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative;">
+                        <i class="fas fa-check" style="color: var(--success); position: absolute; left: 0; font-size: 0.8rem;"></i>
+                        <small>Ответственность за пароль несет владелец</small>
+                    </li>
+                    <li style="padding-left: 1.5rem; position: relative;">
+                        <i class="fas fa-check" style="color: var(--success); position: absolute; left: 0; font-size: 0.8rem;"></i>
+                        <small>Все споры решаются общим собранием</small>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Информация о последних регистрациях -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-history" style="color: var(--primary-blue);"></i>
+                Недавно зарегистрированные
+            </h2>
+        </div>
+        <div style="color: var(--medium-gray); text-align: center; padding: 2rem;">
+            <i class="fas fa-users" style="font-size: 2rem; color: var(--light-gray); margin-bottom: 1rem;"></i>
+            <p>Здесь будет отображаться список недавно зарегистрированных пользователей</p>
+            <p style="font-size: 0.9rem;">После создания первого пользователя информация появится автоматически</p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Валидация формы
+    const form = document.querySelector('form');
+    const passwordInput = document.getElementById('password');
+    
+    form.addEventListener('submit', function(e) {
+        if (passwordInput.value.length < 6) {
+            e.preventDefault();
+            alert('Пароль должен содержать минимум 6 символов');
+            passwordInput.focus();
+            return false;
+        }
+    });
+    
+    // Показ/скрытие пароля (опционально)
+    const showPasswordToggle = document.createElement('button');
+    showPasswordToggle.type = 'button';
+    showPasswordToggle.innerHTML = '<i class="fas fa-eye"></i>';
+    showPasswordToggle.style.cssText = `
+        position: absolute;
+        right: 35px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: var(--medium-gray);
+        cursor: pointer;
+        font-size: 0.9rem;
+    `;
+    
+    passwordInput.parentNode.style.position = 'relative';
+    passwordInput.parentNode.appendChild(showPasswordToggle);
+    
+    showPasswordToggle.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+    });
+});
+</script>
+{% endblock %}
