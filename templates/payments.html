@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "partials/transaction_row.html" import transaction_row %}
+
+{% block title %}Платежи — ДворPay{% endblock %}
+
+{% block search %}
+<div class="relative">
+  <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+  </svg>
+  <input
+    type="search"
+    id="tx-search"
+    placeholder="Поиск по операциям"
+    class="w-full bg-dvor-card border border-white/5 rounded-2xl pl-9 pr-4 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-dvor-accent/40"
+  >
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="px-4 pt-4 pb-6">
+  <div class="flex items-center justify-between mb-4">
+    <h1 class="text-xl font-semibold">Платежи</h1>
+    <button type="button" onclick="openTransfer()" class="text-sm bg-dvor-accent text-zinc-950 font-medium px-4 py-2 rounded-xl active:scale-95 transition">
+      + Перевод
+    </button>
+  </div>
+
+  <div class="grid grid-cols-2 gap-3 mb-5">
+    <div class="bg-dvor-card border border-white/5 rounded-2xl p-4">
+      <p class="text-xs text-zinc-500 mb-1">Баланс</p>
+      <p class="text-lg font-semibold flex items-center gap-1">
+        {{ "%.2f"|format(user.balance) }}
+        <img src="/static/dubl.svg" class="w-5 h-5" alt="₮">
+      </p>
+    </div>
+    <div class="bg-dvor-card border border-white/5 rounded-2xl p-4">
+      <p class="text-xs text-zinc-500 mb-1">Операций</p>
+      <p class="text-lg font-semibold">{{ transactions|length }}</p>
+    </div>
+  </div>
+
+  {% if transactions %}
+  <div id="tx-list" class="bg-dvor-card border border-white/5 rounded-2xl px-4">
+    {% for tx in transactions %}
+      {{ transaction_row(tx, user, users_map) }}
+    {% endfor %}
+  </div>
+  <p id="tx-empty" class="hidden text-center text-zinc-500 py-8 text-sm">Ничего не найдено</p>
+  {% else %}
+  <div class="bg-dvor-card border border-white/5 rounded-2xl py-12 text-center">
+    <p class="text-zinc-500 text-sm">История пуста</p>
+    <button type="button" onclick="openTransfer()" class="mt-3 text-sm text-dvor-accent hover:underline">Сделать первый перевод</button>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const businessAccounts = {{ business_logins | tojson }};
+  initTransferPin(businessAccounts);
+  bindPaymentForm('transfer-form');
+  bindTransactionSearch('tx-search', 'tx-list');
+
+  const searchInput = document.getElementById('tx-search');
+  const emptyMsg = document.getElementById('tx-empty');
+  const txList = document.getElementById('tx-list');
+  if (searchInput && txList && emptyMsg) {
+    searchInput.addEventListener('input', () => {
+      const visible = txList.querySelectorAll('[data-search]:not(.hidden)').length;
+      emptyMsg.classList.toggle('hidden', visible > 0 || searchInput.value.trim() === '');
+    });
+  }
+</script>
+{% endblock %}

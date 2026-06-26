@@ -1,0 +1,16 @@
+services:
+  dvorpay:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: "8000"
+      DATABASE_URL: "sqlite:////app/data/dvorpay.db"
+    env_file:
+      - .env
+    volumes:
+      - dvorpay_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  dvorpay_data:

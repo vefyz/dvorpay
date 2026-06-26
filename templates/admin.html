@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>Админ — ДворPay</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dvor: { accent: '#22c55e', card: '#1a1f2e', surface: '#12151f' }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" crossorigin="">
+  <style>
+    body { background: #0b0d12; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes spin-slow { to { transform: rotate(360deg); } }
+    .animate-spin-slow { animation: spin-slow 1.2s linear infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:.4} 50%{opacity:1} }
+    .animate-pulse-dot { animation: pulse-dot 1s ease-in-out infinite; }
+    #geofence-map { height: 380px; border-radius: 1rem; z-index: 0; }
+    .leaflet-draw-toolbar a { background-color: #1a1f2e !important; }
+  </style>
+</head>
+<body class="min-h-screen text-white pb-8">
+  <div class="w-full max-w-4xl mx-auto min-h-screen px-4 sm:px-6">
+
+    <header class="flex items-center justify-between pt-5 pb-4">
+      <div>
+        <h1 class="text-xl font-semibold">Админ-панель</h1>
+        <p class="text-sm text-zinc-500">{{ user.name }}</p>
+      </div>
+      <a href="/logout" class="text-sm text-zinc-400 hover:text-red-400 px-3 py-2 rounded-xl bg-dvor-card border border-white/5">Выйти</a>
+    </header>
+
+    {% if success %}
+    <div class="mb-4 rounded-2xl bg-dvor-accent/10 border border-dvor-accent/20 text-dvor-accent px-4 py-3 text-sm">{{ success }}</div>
+    {% endif %}
+    {% if error %}
+    <div class="mb-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 text-sm">{{ error }}</div>
+    {% endif %}
+
+    {% if issued_url %}
+    <div class="mb-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-300 px-4 py-3 text-sm break-all">
+      <p class="font-medium mb-1">Ссылка для записи в NFC-карту:</p>
+      <code class="text-xs">{{ issued_url }}</code>
+    </div>
+    {% endif %}
+
+    <!-- GPS-карта: территория NFC-оплаты -->
+    <section class="bg-dvor-card border border-white/5 rounded-2xl p-5 mb-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-lg font-medium">Территория NFC-оплаты</h2>
+          <p class="text-sm text-zinc-500 mt-1">Обведите двор на карте — платежи вне зоны будут отклонены</p>
+        </div>
+        <button type="button" id="geofence-locate" class="text-sm px-4 py-2 rounded-xl bg-dvor-surface border border-white/10 text-zinc-300 hover:bg-white/5 shrink-0">
+          📍 Моё местоположение
+        </button>
+      </div>
+
+      <div id="geofence-map" class="border border-white/10 mb-4"></div>
+
+      <p class="text-xs text-zinc-500 mb-4">
+        <strong class="text-zinc-400">Инструменты слева на карте:</strong>
+        полигон — обвести территорию произвольно;
+        круг — зона радиусом;
+        карандаш — редактировать;
+        корзина — удалить.
+      </p>
+      <p id="geofence-status" class="text-sm text-dvor-accent mb-4">Загрузка карты...</p>
+
+      <form method="post" action="/admin/geofence/save" id="geofence-form" class="flex flex-col sm:flex-row gap-3">
+        <input type="hidden" name="mode" id="gf-mode" value="{{ geofence.mode }}">
+        <input type="hidden" name="center_lat" id="gf-center-lat" value="{{ geofence.center_lat }}">
+        <input type="hidden" name="center_lon" id="gf-center-lon" value="{{ geofence.center_lon }}">
+        <input type="hidden" name="radius_meters" id="gf-radius" value="{{ geofence.radius_meters }}">
+        <input type="hidden" name="polygon_json" id="gf-polygon-json" value="[]">
+        <button type="submit" class="flex-1 sm:flex-none bg-dvor-accent hover:bg-green-400 text-zinc-950 font-semibold px-8 py-3.5 rounded-2xl transition">
+          Сохранить территорию
+        </button>
+      </form>
+    </section>
+
+    <!-- Создание пользователя -->
+    <section class="bg-dvor-card border border-white/5 rounded-2xl p-5 mb-5">
+      <h2 class="text-lg font-medium mb-1">Создать пользователя</h2>
+      <p class="text-sm text-zinc-500 mb-4">Открытой регистрации нет — только через администрацию</p>
+
+      <form method="post" action="/admin/users/create" class="space-y-4" id="user-form">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="new-user-id" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Логин</label>
+            <input type="text" id="new-user-id" name="user_id" required pattern="[a-zA-Z0-9_]+"
+              class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-dvor-accent/40"
+              placeholder="petr">
+          </div>
+          <div>
+            <label for="new-user-name" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Имя</label>
+            <input type="text" id="new-user-name" name="name" required
+              class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-dvor-accent/40"
+              placeholder="Пётр Житель">
+          </div>
+          <div>
+            <label for="new-user-password" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Пароль / ПИН</label>
+            <input type="text" id="new-user-password" name="password" required
+              class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-dvor-accent/40"
+              placeholder="1234">
+          </div>
+          <div>
+            <label for="new-user-role" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Роль</label>
+            <select id="new-user-role" name="role" required
+              class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-dvor-accent/40">
+              <option value="user">user — житель</option>
+              <option value="business">business — организация</option>
+              <option value="admin">admin — администрация</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="new-user-balance" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Стартовый баланс</label>
+          <div class="relative max-w-xs">
+            <img src="/static/dubl.svg" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 opacity-70" alt="₮">
+            <input type="number" id="new-user-balance" name="balance" min="0" step="0.01" value="0"
+              class="w-full bg-dvor-surface border border-white/5 rounded-2xl pl-12 pr-4 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-dvor-accent/40">
+          </div>
+        </div>
+        <button type="submit" class="w-full sm:w-auto bg-white/10 hover:bg-white/15 text-white font-semibold px-8 py-3.5 rounded-2xl transition border border-white/10">
+          Создать пользователя
+        </button>
+      </form>
+    </section>
+
+    <!-- Выпуск NFC-карты -->
+    <section class="bg-dvor-card border border-white/5 rounded-2xl p-5 mb-5">
+      <h2 class="text-lg font-medium mb-1 flex items-center gap-2">
+        <span>NFC-карты</span>
+      </h2>
+      <p class="text-sm text-zinc-500 mb-4">Выпуск банковской карты (токена) для оплаты у терминала</p>
+
+      <form method="post" action="/admin/nfc/issue" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="nfc-owner" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Владелец</label>
+            <select id="nfc-owner" name="owner_id" required
+              class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-dvor-accent/40">
+              {% for u in all_users %}
+              {% if u.role == 'user' %}
+              <option value="{{ u.id }}">{{ u.name }} (@{{ u.id }})</option>
+              {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="nfc-pin" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">ПИН карты (4 цифры)</label>
+            <input type="password" id="nfc-pin" name="pin" required maxlength="4" pattern="[0-9]{4}" inputmode="numeric"
+              class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-dvor-accent/40"
+              placeholder="1234">
+          </div>
+        </div>
+        <button type="submit" class="w-full sm:w-auto bg-dvor-accent hover:bg-green-400 text-zinc-950 font-semibold px-8 py-3.5 rounded-2xl transition">
+          Выпустить NFC-карту
+        </button>
+      </form>
+    </section>
+
+    <!-- Начисление дублей -->
+    <section class="bg-dvor-card border border-white/5 rounded-2xl p-5 mb-5">
+      <h2 class="text-lg font-medium mb-1 flex items-center gap-2">
+        <img src="/static/dubl.svg" class="w-5 h-5" alt="₮">
+        Начисление дублей
+      </h2>
+      <p class="text-sm text-zinc-500 mb-4">Эмиссия дублей на счёт пользователя</p>
+
+      <form method="post" action="/admin/credit" class="space-y-4" id="credit-form">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="user_id" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Пользователь</label>
+            <select
+              id="user_id"
+              name="user_id"
+              required
+              class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-dvor-accent/40 text-base"
+            >
+              {% for u in all_users %}
+              {% if u.id != user.id %}
+              <option value="{{ u.id }}">{{ u.name }} (@{{ u.id }})</option>
+              {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="credit-amount" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Сумма</label>
+            <div class="relative">
+              <img src="/static/dubl.svg" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 opacity-70" alt="₮">
+              <input
+                type="number"
+                id="credit-amount"
+                name="amount"
+                required
+                min="0.01"
+                step="0.01"
+                inputmode="decimal"
+                class="w-full bg-dvor-surface border border-white/5 rounded-2xl pl-12 pr-4 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-dvor-accent/40 text-base"
+                placeholder="100.00"
+              >
+            </div>
+          </div>
+        </div>
+        <div>
+          <label for="credit-comment" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Комментарий</label>
+          <input
+            type="text"
+            id="credit-comment"
+            name="comment"
+            class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-dvor-accent/40 text-base"
+            placeholder="Зарплата, премия, субсидия..."
+          >
+        </div>
+        <button type="submit" class="w-full sm:w-auto bg-dvor-accent hover:bg-green-400 text-zinc-950 font-semibold px-8 py-3.5 rounded-2xl transition">
+          Начислить дубли
+        </button>
+      </form>
+    </section>
+
+    <!-- Список NFC-карт -->
+    <section class="bg-dvor-card border border-white/5 rounded-2xl overflow-hidden mb-5">
+      <div class="px-5 py-4 border-b border-white/5">
+        <h2 class="font-medium">Выпущенные NFC-карты</h2>
+      </div>
+      <div class="divide-y divide-white/5">
+        {% for card in nfc_cards %}
+        <div class="px-5 py-3 flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
+          <div class="flex-1 min-w-0">
+            <p class="font-mono text-xs text-zinc-400 truncate">{{ card.card_token }}</p>
+            <p class="mt-0.5">{{ users_map.get(card.owner_id, card.owner_id) }} · попыток: {{ card.failed_attempts }}</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            {% if card.is_blocked %}
+            <span class="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">заблокирована</span>
+            <form method="post" action="/admin/nfc/unblock" class="inline">
+              <input type="hidden" name="card_token" value="{{ card.card_token }}">
+              <button type="submit" class="text-xs text-dvor-accent hover:underline">Разблокировать</button>
+            </form>
+            {% else %}
+            <span class="text-xs px-2 py-0.5 rounded-full bg-dvor-accent/20 text-dvor-accent">активна</span>
+            {% endif %}
+            <a href="/pay?card_token={{ card.card_token }}" class="text-xs text-zinc-400 hover:text-white">Тест →</a>
+          </div>
+        </div>
+        {% else %}
+        <p class="px-5 py-8 text-center text-zinc-500 text-sm">Карт пока нет</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Пользователи -->
+    <section class="bg-dvor-card border border-white/5 rounded-2xl overflow-hidden mb-5">
+      <div class="px-5 py-4 border-b border-white/5">
+        <h2 class="font-medium">Пользователи системы</h2>
+      </div>
+      <div class="overflow-x-auto hide-scrollbar">
+        <table class="w-full text-sm min-w-[480px]">
+          <thead class="text-zinc-500 text-xs uppercase">
+            <tr class="border-b border-white/5">
+              <th class="text-left px-5 py-3">Логин</th>
+              <th class="text-left px-5 py-3">Имя</th>
+              <th class="text-left px-5 py-3">Роль</th>
+              <th class="text-right px-5 py-3">Баланс</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in all_users %}
+            <tr class="border-b border-white/5 last:border-0 hover:bg-white/[0.02]">
+              <td class="px-5 py-3 font-mono text-zinc-300">{{ u.id }}</td>
+              <td class="px-5 py-3">{{ u.name }}</td>
+              <td class="px-5 py-3">
+                <span class="text-xs px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 uppercase">{{ u.role }}</span>
+              </td>
+              <td class="px-5 py-3 text-right font-medium">
+                <span class="inline-flex items-center gap-1 justify-end">
+                  {{ "%.2f"|format(u.balance) }}
+                  <img src="/static/dubl.svg" class="w-4 h-4" alt="₮">
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Последние операции -->
+    <section class="bg-dvor-card border border-white/5 rounded-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-white/5">
+        <h2 class="font-medium">Последние операции</h2>
+      </div>
+      <div class="divide-y divide-white/5">
+        {% for tx in transactions %}
+        <div class="px-5 py-3 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm">
+          <span class="text-zinc-500 shrink-0">{{ tx.created_at.strftime('%d.%m %H:%M') }}</span>
+          <span class="flex-1 min-w-0 truncate">{{ users_map.get(tx.sender_id, tx.sender_id) }} → {{ users_map.get(tx.recipient_id, tx.recipient_id) }}</span>
+          <span class="font-medium flex items-center gap-1 shrink-0">
+            {{ "%.2f"|format(tx.amount) }}
+            <img src="/static/dubl.svg" class="w-4 h-4" alt="₮">
+          </span>
+        </div>
+        {% else %}
+        <p class="px-5 py-8 text-center text-zinc-500 text-sm">Нет операций</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <!-- Оверлей обработки -->
+  <div id="payment-processing" class="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-6">
+    <div class="bg-dvor-card border border-white/10 rounded-3xl p-8 max-w-sm w-full text-center">
+      <div class="w-16 h-16 mx-auto mb-5 rounded-full border-2 border-dvor-accent/30 border-t-dvor-accent animate-spin-slow"></div>
+      <p id="payment-step-text" class="text-lg font-medium mb-2">Обработка начисления...</p>
+      <p class="text-sm text-zinc-500">Пожалуйста, подождите</p>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+  <script>window.GEOFENCE_DATA = {{ geofence | tojson }};</script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js" crossorigin=""></script>
+  <script src="/static/admin_geofence.js"></script>
+  <script>
+    const CREDIT_STEPS = ['Обработка начисления...', 'Проверка пользователя...', 'Зачисление дублей...', 'Запись в историю...'];
+    let creditSubmitting = false;
+    const creditForm = document.getElementById('credit-form');
+    if (creditForm) {
+      creditForm.addEventListener('submit', (e) => {
+        if (creditSubmitting) return;
+        e.preventDefault();
+        creditSubmitting = true;
+        const overlay = document.getElementById('payment-processing');
+        const text = document.getElementById('payment-step-text');
+        overlay.classList.remove('hidden');
+        let step = 0;
+        const timer = setInterval(() => {
+          step += 1;
+          if (step < CREDIT_STEPS.length && text) text.textContent = CREDIT_STEPS[step];
+        }, 600);
+        setTimeout(() => {
+          clearInterval(timer);
+          creditSubmitting = true;
+          creditForm.submit();
+        }, 2400);
+      });
+    }
+  </script>
+</body>
+</html>

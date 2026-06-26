@@ -1,0 +1,77 @@
+<!-- Форма перевода (выезжающая панель) -->
+<div id="transfer-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden" onclick="closeTransfer()"></div>
+<div id="transfer-sheet" class="fixed bottom-0 left-0 right-0 z-[110] translate-y-full transition-transform duration-300 ease-out">
+  <div class="w-full max-w-md sm:max-w-lg mx-auto bg-dvor-card rounded-t-3xl border border-white/10 p-5 pb-8 max-h-[90vh] overflow-y-auto hide-scrollbar">
+    <div class="w-10 h-1 bg-white/10 rounded-full mx-auto mb-5"></div>
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-lg font-medium">Перевод дублей</h3>
+      <button type="button" onclick="closeTransfer()" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white">✕</button>
+    </div>
+
+    <form method="post" action="/transfer" class="space-y-4" id="transfer-form">
+      <div>
+        <label for="recipient" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Получатель</label>
+        <input
+          type="text"
+          id="recipient"
+          name="recipient"
+          required
+          autocomplete="off"
+          class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-dvor-accent/40 text-base"
+          placeholder="Логин получателя"
+        >
+      </div>
+      <div>
+        <label for="amount" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Сумма</label>
+        <div class="relative">
+          <img src="/static/dubl.svg" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 opacity-70" alt="₮">
+          <input
+            type="number"
+            id="amount"
+            name="amount"
+            required
+            min="0.01"
+            step="0.01"
+            inputmode="decimal"
+            class="w-full bg-dvor-surface border border-white/5 rounded-2xl pl-12 pr-4 py-3.5 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-dvor-accent/40 text-base"
+            placeholder="0.00"
+          >
+        </div>
+      </div>
+      <div>
+        <label for="comment" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Комментарий</label>
+        <input
+          type="text"
+          id="comment"
+          name="comment"
+          class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-dvor-accent/40 text-base"
+          placeholder="За что платите"
+        >
+      </div>
+      <label class="flex items-center gap-3 cursor-pointer">
+        <input type="checkbox" id="commercial" name="commercial" class="w-4 h-4 rounded border-white/20 bg-dvor-surface text-dvor-accent focus:ring-dvor-accent/40">
+        <span class="text-sm text-zinc-400">Коммерческий платёж</span>
+      </label>
+      <div id="pin-block" class="hidden">
+        <label for="pin" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">ПИН-код</label>
+        <input
+          type="password"
+          id="pin"
+          name="pin"
+          maxlength="20"
+          inputmode="numeric"
+          class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-dvor-accent/40 text-base"
+          placeholder="Ваш пароль / ПИН"
+        >
+        <p class="text-xs text-zinc-600 mt-2">Обязателен при оплате организации</p>
+      </div>
+      <button
+        type="submit"
+        id="transfer-submit-btn"
+        class="w-full bg-dvor-accent hover:bg-green-400 text-zinc-950 font-semibold py-3.5 rounded-2xl transition mt-2 text-base"
+      >
+        Отправить
+      </button>
+    </form>
+  </div>
+</div>

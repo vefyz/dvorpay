@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>{% block title %}ДворPay{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dvor: { accent: '#22c55e', card: '#1a1f2e', surface: '#12151f' }
+          },
+          padding: { safe: 'env(safe-area-inset-bottom)' }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background: #0b0d12; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @keyframes spin-slow { to { transform: rotate(360deg); } }
+    .animate-spin-slow { animation: spin-slow 1.2s linear infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:.4} 50%{opacity:1} }
+    .animate-pulse-dot { animation: pulse-dot 1s ease-in-out infinite; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen text-white {% block body_class %}pb-24{% endblock %}">
+  <div class="w-full max-w-md sm:max-w-lg mx-auto min-h-screen px-0 sm:px-2">
+
+    {% block header %}
+    <header class="flex items-center gap-2 sm:gap-3 px-4 pt-4 pb-2 safe-top">
+      <div class="w-10 h-10 rounded-full bg-dvor-card border border-white/10 flex items-center justify-center text-sm font-semibold text-dvor-accent shrink-0">
+        {{ user.name[0] }}
+      </div>
+      <div class="flex-1 min-w-0">
+        {% block search %}
+        <div class="relative">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input
+            type="search"
+            id="global-search"
+            placeholder="Поиск"
+            class="w-full bg-dvor-card border border-white/5 rounded-2xl pl-9 pr-4 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-white/10"
+            disabled
+            title="Поиск доступен на странице «Платежи»"
+          >
+        </div>
+        {% endblock %}
+      </div>
+      <a href="/logout" class="w-10 h-10 rounded-full bg-dvor-card border border-white/10 flex items-center justify-center shrink-0" title="Выйти">
+        <svg class="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </a>
+    </header>
+    {% endblock %}
+
+    {% if success is defined and success %}
+    <div class="mx-4 mt-3 rounded-2xl bg-dvor-accent/10 border border-dvor-accent/20 text-dvor-accent px-4 py-3 text-sm flex items-center justify-between gap-2">
+      <span class="flex-1">{{ success }}</span>
+      <button type="button" onclick="this.parentElement.remove()" class="shrink-0 text-dvor-accent/60 hover:text-dvor-accent">✕</button>
+    </div>
+    {% endif %}
+    {% if error is defined and error %}
+    <div class="mx-4 mt-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 text-sm flex items-center justify-between gap-2">
+      <span class="flex-1">{{ error }}</span>
+      <button type="button" onclick="this.parentElement.remove()" class="shrink-0 text-red-400/60 hover:text-red-400">✕</button>
+    </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </div>
+
+  {% block bottom_nav %}
+  <nav class="fixed bottom-0 left-0 right-0 bg-dvor-card/95 backdrop-blur-lg border-t border-white/5 pb-safe z-30">
+    <div class="w-full max-w-md sm:max-w-lg mx-auto flex justify-around py-2 px-1">
+      <a href="/dashboard" class="flex flex-col items-center gap-0.5 py-1 px-2 sm:px-4 min-w-0 {% if active_tab == 'home' %}text-dvor-accent{% else %}text-zinc-500{% endif %}">
+        <svg class="w-6 h-6 shrink-0" fill="{% if active_tab == 'home' %}currentColor{% else %}none{% endif %}" stroke="currentColor" viewBox="0 0 24 24">
+          {% if active_tab != 'home' %}<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/>{% else %}<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>{% endif %}
+        </svg>
+        <span class="text-[10px] truncate">Главный</span>
+      </a>
+      <a href="/payments" class="flex flex-col items-center gap-0.5 py-1 px-2 sm:px-4 min-w-0 {% if active_tab == 'payments' %}text-dvor-accent{% else %}text-zinc-500{% endif %}">
+        <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+        </svg>
+        <span class="text-[10px] truncate">Платежи</span>
+      </a>
+      <a href="/qr" class="flex flex-col items-center gap-0.5 py-1 px-2 sm:px-4 min-w-0 {% if active_tab == 'qr' %}text-dvor-accent{% else %}text-zinc-500{% endif %}">
+        <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+        </svg>
+        <span class="text-[10px] truncate">QR-код</span>
+      </a>
+      <a href="/contacts" class="flex flex-col items-center gap-0.5 py-1 px-2 sm:px-4 min-w-0 {% if active_tab == 'contacts' %}text-dvor-accent{% else %}text-zinc-500{% endif %}">
+        <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <span class="text-[10px] truncate">Контакты</span>
+      </a>
+    </div>
+  </nav>
+  {% endblock %}
+
+  {% include "partials/transfer_sheet.html" %}
+  {% include "partials/quickpay_sheet.html" %}
+
+  <!-- Оверлей обработки платежа -->
+  <div id="payment-processing" class="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md hidden items-center justify-center p-6">
+    <div class="bg-dvor-card border border-white/10 rounded-3xl p-8 max-w-sm w-full text-center">
+      <div class="w-16 h-16 mx-auto mb-5 rounded-full border-2 border-dvor-accent/30 border-t-dvor-accent animate-spin-slow"></div>
+      <p id="payment-step-text" class="text-lg font-medium mb-2">Обработка платежа...</p>
+      <p class="text-sm text-zinc-500">Пожалуйста, не закрывайте страницу</p>
+      <div class="flex justify-center gap-1.5 mt-5">
+        <span class="w-2 h-2 rounded-full bg-dvor-accent animate-pulse-dot"></span>
+        <span class="w-2 h-2 rounded-full bg-dvor-accent animate-pulse-dot" style="animation-delay:.2s"></span>
+        <span class="w-2 h-2 rounded-full bg-dvor-accent animate-pulse-dot" style="animation-delay:.4s"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

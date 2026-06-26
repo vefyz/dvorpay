@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Вход — ДворPay</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dvor: { accent: '#22c55e', card: '#1a1f2e', surface: '#12151f' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background: radial-gradient(ellipse at top, #1a2332 0%, #0b0d12 60%); }
+  </style>
+</head>
+<body class="min-h-screen text-white flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-10">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-dvor-card border border-white/10 mb-5">
+        <img src="/static/dubl.svg" class="w-9 h-9" alt="₮">
+      </div>
+      <h1 class="text-3xl font-semibold tracking-tight">ДворPay</h1>
+      <p class="text-zinc-400 mt-2 text-sm">Платёжная система Дворовой Федерации</p>
+    </div>
+
+    <div class="bg-dvor-card rounded-3xl border border-white/5 p-6 shadow-2xl">
+      <h2 class="text-lg font-medium mb-6">Вход в кабинет</h2>
+
+      {% if error %}
+      <div class="mb-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 text-sm">
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <form method="post" action="/login" class="space-y-4">
+        <div>
+          <label for="login" class="block text-xs text-zinc-400 mb-2 uppercase tracking-wide">Логин</label>
+          <input
+            type="text"
+            id="login"
+            name="login"
+            required
+            autocomplete="username"
+            class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-dvor-accent/50"
+            placeholder="логин"
+          >
+        </div>
+        <div>
+          <label for="password" class="block text-xs text-zinc-400 mb-2 uppercase tracking-wide">Пароль</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            autocomplete="current-password"
+            class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-dvor-accent/50"
+            placeholder="••••"
+          >
+        </div>
+        <button
+          type="submit"
+          class="w-full bg-dvor-accent hover:bg-green-400 text-zinc-950 font-semibold py-3.5 rounded-2xl transition mt-2"
+        >
+          Войти
+        </button>
+      </form>
+
+      <p class="mt-6 text-center text-sm text-zinc-500 border-t border-white/5 pt-5">
+        Для создания аккаунта обратитесь в администрацию
+      </p>
+    </div>
+  </div>
+</body>
+</html>

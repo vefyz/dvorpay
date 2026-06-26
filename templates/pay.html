@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <title>{% if terminal_mode %}Терминал оплаты{% else %}NFC-оплата{% endif %} — ДворPay</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dvor: { accent: '#22c55e', card: '#1a1f2e', surface: '#12151f' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>body { background: #0b0d12; }</style>
+</head>
+<body class="min-h-screen text-white flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+
+    <div class="text-center mb-6">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-dvor-card border border-white/10 mb-3">
+        <img src="/static/dubl.svg" class="w-8 h-8" alt="₮">
+      </div>
+      <h1 class="text-xl font-semibold">NFC-терминал ДворPay</h1>
+      {% if merchant %}
+      <p class="text-sm text-zinc-500 mt-1">Продавец: {{ merchant.name }}</p>
+      {% endif %}
+    </div>
+
+    {% if error %}
+    <div class="mb-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 text-sm">
+      {{ error }}
+    </div>
+    {% endif %}
+    {% if success %}
+    <div class="mb-4 rounded-2xl bg-dvor-accent/10 border border-dvor-accent/20 text-dvor-accent px-4 py-3 text-sm">
+      {{ success }}
+    </div>
+    {% endif %}
+
+    {% if terminal_mode and session_token %}
+    <div class="bg-dvor-card border border-white/5 rounded-3xl p-6">
+      <div class="text-center mb-6 pb-5 border-b border-white/5">
+        <p class="text-xs text-zinc-500 uppercase tracking-wide mb-1">Покупатель</p>
+        <p class="text-2xl font-semibold">{{ buyer_name }}</p>
+      </div>
+
+      <form method="post" action="/pay/execute" id="nfc-pay-form" class="space-y-4">
+        <input type="hidden" name="session_token" value="{{ session_token }}">
+        <input type="hidden" name="latitude" id="latitude" value="">
+        <input type="hidden" name="longitude" id="longitude" value="">
+
+        <div>
+          <label for="amount" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Сумма к оплате</label>
+          <div class="relative">
+            <img src="/static/dubl.svg" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 opacity-70 mr-1" alt="₮">
+            <input
+              type="number"
+              id="amount"
+              name="amount"
+              required
+              min="0.01"
+              step="0.01"
+              inputmode="decimal"
+              class="w-full bg-dvor-surface border border-white/5 rounded-2xl pl-12 pr-4 py-3.5 text-white text-lg focus:outline-none focus:ring-2 focus:ring-dvor-accent/40"
+              placeholder="0.00"
+            >
+          </div>
+        </div>
+
+        <div>
+          <label for="comment" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">Комментарий</label>
+          <input
+            type="text"
+            id="comment"
+            name="comment"
+            class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-dvor-accent/40"
+            placeholder="За товары / услуги"
+          >
+        </div>
+
+        <div>
+          <label for="pin" class="block text-xs text-zinc-500 mb-2 uppercase tracking-wide">ПИН-код карты покупателя</label>
+          <input
+            type="password"
+            id="pin"
+            name="pin"
+            required
+            maxlength="4"
+            inputmode="numeric"
+            pattern="[0-9]{4}"
+            class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white text-center text-2xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-dvor-accent/40"
+            placeholder="••••"
+          >
+        </div>
+
+        <p id="geo-status" class="text-xs text-zinc-500 text-center">Определение геопозиции...</p>
+
+        <button
+          type="submit"
+          id="pay-submit-btn"
+          disabled
+          class="w-full bg-dvor-accent disabled:opacity-40 disabled:cursor-not-allowed hover:bg-green-400 text-zinc-950 font-semibold py-4 rounded-2xl transition text-base"
+        >
+          Принять оплату
+        </button>
+      </form>
+    </div>
+    {% else %}
+    <div class="bg-dvor-card border border-white/5 rounded-3xl p-6 text-center text-sm text-zinc-400">
+      <p>Для приёма оплаты приложите NFC-карту жителя к терминалу.</p>
+      <p class="mt-3 text-zinc-500">Войдите как <strong class="text-zinc-300">business</strong> или <strong class="text-zinc-300">admin</strong> и откройте ссылку карты.</p>
+      {% if merchant and merchant.role == 'business' %}
+      <a href="/payments" class="inline-block mt-5 text-dvor-accent hover:underline">← К платежам</a>
+      {% elif merchant %}
+      <a href="/admin" class="inline-block mt-5 text-dvor-accent hover:underline">← В админку</a>
+      {% else %}
+      <a href="/" class="inline-block mt-5 text-dvor-accent hover:underline">Войти</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if terminal_mode and session_token %}
+  <div id="payment-processing" class="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md hidden items-center justify-center p-6">
+    <div class="bg-dvor-card border border-white/10 rounded-3xl p-8 max-w-sm w-full text-center">
+      <div class="w-16 h-16 mx-auto mb-5 rounded-full border-2 border-dvor-accent/30 border-t-dvor-accent animate-spin" style="animation-duration:1.2s"></div>
+      <p id="payment-step-text" class="text-lg font-medium mb-2">Обработка платежа...</p>
+      <p class="text-sm text-zinc-500">Пожалуйста, не закрывайте страницу</p>
+    </div>
+  </div>
+
+  <script>
+    const PAYMENT_STEPS = [
+      'Обработка платежа...',
+      'Проверка сессии...',
+      'Проверка геопозиции...',
+      'Проверка ПИН-кода...',
+      'Списание дублей...',
+    ];
+
+    const latInput = document.getElementById('latitude');
+    const lonInput = document.getElementById('longitude');
+    const geoStatus = document.getElementById('geo-status');
+    const submitBtn = document.getElementById('pay-submit-btn');
+    const form = document.getElementById('nfc-pay-form');
+    let geoReady = false;
+    let submitting = false;
+
+    function enablePay() {
+      if (geoReady) {
+        submitBtn.disabled = false;
+        geoStatus.textContent = 'Геопозиция получена. Можно принимать оплату.';
+        geoStatus.classList.add('text-dvor-accent');
+      }
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          latInput.value = pos.coords.latitude;
+          lonInput.value = pos.coords.longitude;
+          geoReady = true;
+          enablePay();
+        },
+        () => {
+          geoStatus.textContent = 'Не удалось получить GPS. Разрешите геолокацию в браузере.';
+          geoStatus.classList.add('text-red-400');
+          // Для локальной отладки — координаты центра Двора
+          latInput.value = '55.751244';
+          lonInput.value = '37.618423';
+          geoReady = true;
+          enablePay();
+          geoStatus.textContent += ' (используются тестовые координаты Двора)';
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    } else {
+      latInput.value = '55.751244';
+      lonInput.value = '37.618423';
+      geoReady = true;
+      enablePay();
+      geoStatus.textContent = 'GPS недоступен — тестовые координаты Двора.';
+    }
+
+    form.addEventListener('submit', (e) => {
+      if (submitting) return;
+      e.preventDefault();
+      submitting = true;
+      submitBtn.disabled = true;
+
+      const overlay = document.getElementById('payment-processing');
+      const text = document.getElementById('payment-step-text');
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+
+      let step = 0;
+      const timer = setInterval(() => {
+        step += 1;
+        if (step < PAYMENT_STEPS.length && text) text.textContent = PAYMENT_STEPS[step];
+      }, 650);
+
+      setTimeout(() => {
+        clearInterval(timer);
+        submitting = true;
+        form.submit();
+      }, 2800);
+    });
+  </script>
+  {% endif %}
+</body>
+</html>

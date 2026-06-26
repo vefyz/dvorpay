@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}QR-код — ДворPay{% endblock %}
+
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<section class="px-4 pt-4 pb-6 space-y-5">
+  <h1 class="text-xl font-semibold">QR-код</h1>
+
+  <!-- Мой QR для приёма -->
+  <div class="bg-dvor-card border border-white/5 rounded-2xl p-5 text-center">
+    <p class="text-sm text-zinc-400 mb-4">Покажите этот код, чтобы вам перевели дубли</p>
+    <div id="qrcode" class="inline-flex bg-white p-3 rounded-2xl mb-4"></div>
+    <p class="text-xs text-zinc-500 break-all font-mono">{{ pay_link }}</p>
+    <p class="text-sm text-zinc-300 mt-2">@{{ user.id }}</p>
+  </div>
+
+  <!-- Оплата по QR / ссылке -->
+  <div class="bg-dvor-card border border-white/5 rounded-2xl p-5">
+    <h2 class="font-medium mb-2">Оплатить по QR</h2>
+    <p class="text-sm text-zinc-500 mb-4">Вставьте ссылку из QR или логин получателя</p>
+    <input
+      type="text"
+      id="qr-parse-input"
+      class="w-full bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-dvor-accent/40 text-base mb-3"
+      placeholder="dvorpay://pay/логин_получателя"
+    >
+    <button
+      type="button"
+      onclick="payFromQrInput()"
+      class="w-full bg-dvor-accent hover:bg-green-400 text-zinc-950 font-semibold py-3.5 rounded-2xl transition"
+    >
+      Перейти к оплате
+    </button>
+  </div>
+
+  <div class="bg-dvor-card border border-white/5 rounded-2xl p-5">
+    <h2 class="font-medium mb-3">Быстрый перевод</h2>
+    <button type="button" onclick="openTransfer()" class="w-full bg-dvor-surface border border-white/5 rounded-2xl py-3.5 text-dvor-accent font-medium active:scale-[0.98] transition">
+      Открыть форму перевода
+    </button>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const businessAccounts = {{ business_logins | tojson }};
+  initTransferPin(businessAccounts);
+  bindPaymentForm('transfer-form');
+
+  new QRCode(document.getElementById('qrcode'), {
+    text: '{{ pay_link }}',
+    width: 180,
+    height: 180,
+    colorDark: '#0b0d12',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M,
+  });
+</script>
+{% endblock %}

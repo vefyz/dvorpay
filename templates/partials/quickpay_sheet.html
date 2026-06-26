@@ -1,0 +1,34 @@
+<!-- Быстрая оплата организациям -->
+<div id="quickpay-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden" onclick="closeQuickPay()"></div>
+<div id="quickpay-sheet" class="fixed bottom-0 left-0 right-0 z-[110] translate-y-full transition-transform duration-300 ease-out">
+  <div class="w-full max-w-md sm:max-w-lg mx-auto bg-dvor-card rounded-t-3xl border border-white/10 p-5 pb-8 max-h-[85vh] overflow-y-auto hide-scrollbar">
+    <div class="w-10 h-1 bg-white/10 rounded-full mx-auto mb-5"></div>
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-medium">Оплата организациям</h3>
+      <button type="button" onclick="closeQuickPay()" class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white">✕</button>
+    </div>
+    <p class="text-sm text-zinc-500 mb-4">Выберите организацию для перевода</p>
+    <div class="space-y-2">
+      {% for biz in business_users %}
+      <button
+        type="button"
+        onclick="closeQuickPay(); openTransfer('{{ biz.id }}')"
+        class="w-full flex items-center gap-3 bg-dvor-surface border border-white/5 rounded-2xl px-4 py-3.5 hover:bg-white/5 transition text-left active:scale-[0.98]"
+      >
+        <div class="w-11 h-11 rounded-full bg-dvor-accent/15 text-dvor-accent flex items-center justify-center font-semibold shrink-0">
+          {{ biz.name[0] }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="font-medium truncate">{{ biz.name }}</p>
+          <p class="text-xs text-zinc-500">@{{ biz.id }}</p>
+        </div>
+        <svg class="w-5 h-5 text-zinc-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </button>
+      {% else %}
+      <p class="text-center text-zinc-500 py-6 text-sm">Нет зарегистрированных организаций</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>

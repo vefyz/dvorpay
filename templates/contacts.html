@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Контакты — ДворPay{% endblock %}
+
+{% block search %}
+<div class="relative">
+  <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+  </svg>
+  <input
+    type="search"
+    id="contact-search"
+    placeholder="Поиск контактов"
+    class="w-full bg-dvor-card border border-white/5 rounded-2xl pl-9 pr-4 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-dvor-accent/40"
+  >
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="px-4 pt-4 pb-6">
+  <h1 class="text-xl font-semibold mb-4">Контакты</h1>
+  <p class="text-sm text-zinc-500 mb-4">Жители и организации Дворовой Федерации</p>
+
+  <div id="contact-list" class="space-y-2">
+    {% for contact in contacts %}
+    <button
+      type="button"
+      onclick="openTransfer('{{ contact.id }}')"
+      data-search="{{ contact.name }} {{ contact.id }} {{ contact.role }}"
+      class="w-full flex items-center gap-3 bg-dvor-card border border-white/5 rounded-2xl px-4 py-3.5 hover:bg-white/5 transition text-left active:scale-[0.98]"
+    >
+      <div class="w-11 h-11 rounded-full flex items-center justify-center font-semibold shrink-0
+        {% if contact.role == 'business' %}bg-dvor-accent/15 text-dvor-accent{% elif contact.role == 'admin' %}bg-amber-500/15 text-amber-400{% else %}bg-white/5 text-zinc-400{% endif %}">
+        {{ contact.name[0] }}
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-medium truncate">{{ contact.name }}</p>
+        <p class="text-xs text-zinc-500">@{{ contact.id }} · {{ contact.role }}</p>
+      </div>
+      <div class="text-right shrink-0">
+        <p class="text-xs text-zinc-500 flex items-center gap-0.5">
+          {{ "%.0f"|format(contact.balance) }}
+          <img src="/static/dubl.svg" class="w-4 h-4" alt="₮">
+        </p>
+        <p class="text-xs text-dvor-accent mt-0.5">Перевести</p>
+      </div>
+    </button>
+    {% else %}
+    <p class="text-center text-zinc-500 py-8 text-sm">Нет других пользователей</p>
+    {% endfor %}
+  </div>
+  <p id="contact-empty" class="hidden text-center text-zinc-500 py-8 text-sm">Ничего не найдено</p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const businessAccounts = {{ business_logins | tojson }};
+  initTransferPin(businessAccounts);
+  bindPaymentForm('transfer-form');
+
+  const contactSearch = document.getElementById('contact-search');
+  const contactList = document.getElementById('contact-list');
+  const contactEmpty = document.getElementById('contact-empty');
+  if (contactSearch && contactList) {
+    contactSearch.addEventListener('input', () => {
+      const q = contactSearch.value.trim().toLowerCase();
+      let visible = 0;
+      contactList.querySelectorAll('[data-search]').forEach((row) => {
+        const match = !q || (row.dataset.search || '').toLowerCase().includes(q);
+        row.classList.toggle('hidden', !match);
+        if (match) visible += 1;
+      });
+      if (contactEmpty) contactEmpty.classList.toggle('hidden', visible > 0 || q === '');
+    });
+  }
+</script>
+{% endblock %}
